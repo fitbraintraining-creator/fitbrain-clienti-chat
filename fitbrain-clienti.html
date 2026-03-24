@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitBrain — Gestione Clienti WA</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F5F0; --surface: #FFFFFF; --surface2: #F0EDE6;
+    --border: #E2DDD6; --border2: #CCC8C0;
+    --text: #1A1816; --text2: #6B6760; --text3: #9B9890;
+    --mattia: #1B4332; --mattia-light: #D8F0E4;
+    --eli: #7C3069; --eli-light: #F5E6F3;
+    --accent: #C8553D; --accent-light: #F5EAE7;
+    --radius: 12px; --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .page { max-width: 680px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .brand-mark { width: 40px; height: 40px; background: #25D366; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .brand-mark svg { width: 22px; height: 22px; }
+  .brand-text h1 { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--text); }
+  .brand-text p { font-size: 13px; color: var(--text2); margin-top: 1px; }
+  .subtitle { font-size: 13px; color: var(--text3); margin-bottom: 24px; padding-left: 52px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; }
+  .card-title { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); margin-bottom: 14px; }
+
+  .coach-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+  .coach-btn {
+    flex: 1; padding: 12px; border-radius: var(--radius-sm); border: 2px solid var(--border);
+    cursor: pointer; font-size: 14px; font-weight: 500; font-family: 'DM Sans', sans-serif;
+    background: var(--bg); color: var(--text2); transition: all 0.15s; text-align: center;
+  }
+  .coach-btn.mattia.active { border-color: var(--mattia); background: var(--mattia-light); color: var(--mattia); }
+  .coach-btn.eli.active { border-color: var(--eli); background: var(--eli-light); color: var(--eli); }
+  .coach-btn:hover:not(.active) { border-color: var(--border2); }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; }
+  select, textarea {
+    width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; padding: 10px 12px; outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    appearance: none; -webkit-appearance: none;
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6760' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+  }
+  .mattia-mode select:focus, .mattia-mode textarea:focus { border-color: var(--mattia); box-shadow: 0 0 0 3px var(--mattia-light); }
+  .eli-mode select:focus, .eli-mode textarea:focus { border-color: var(--eli); box-shadow: 0 0 0 3px var(--eli-light); }
+  textarea { resize: vertical; line-height: 1.6; font-size: 13px; }
+
+  .btn-generate {
+    width: 100%; padding: 14px; border-radius: var(--radius-sm); border: none;
+    cursor: pointer; font-size: 15px; font-weight: 500; font-family: 'DM Sans', sans-serif;
+    color: #fff; transition: all 0.15s;
+  }
+  .mattia-mode .btn-generate { background: var(--mattia); }
+  .mattia-mode .btn-generate:hover { background: #0F2B1F; }
+  .eli-mode .btn-generate { background: var(--eli); }
+  .eli-mode .btn-generate:hover { background: #5C1F54; }
+  .btn-generate:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Versions stack */
+  .versions-wrap { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .version-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; animation: fadeUp 0.2s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .version-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
+  .version-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; }
+  .mattia-mode .version-label { color: var(--mattia); }
+  .eli-mode .version-label { color: var(--eli); }
+  .version-badge { font-size: 11px; padding: 2px 9px; border-radius: 99px; font-weight: 500; }
+  .badge-v1 { background: var(--mattia-light); color: var(--mattia); }
+  .badge-eli { background: var(--eli-light); color: var(--eli); }
+  .badge-edit { background: #EEF2FF; color: #4338CA; }
+
+  .version-body { padding: 16px; font-size: 15px; line-height: 1.75; color: var(--text); white-space: pre-wrap; }
+  .version-body.loading { color: var(--text3); font-style: italic; font-size: 14px; }
+
+  .version-actions { display: flex; gap: 8px; padding: 0 16px 14px; }
+  .btn-copy { flex: 2; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); cursor: pointer; font-size: 12px; font-weight: 500; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text2); transition: all 0.12s; }
+  .btn-copy:hover { border-color: var(--border2); color: var(--text); }
+
+  /* Modifica row */
+  .modifica-row { display: flex; gap: 8px; align-items: flex-end; }
+  .modifica-row textarea { min-height: 60px; flex: 1; }
+  .btn-modifica {
+    padding: 10px 14px; border-radius: var(--radius-sm); border: none;
+    cursor: pointer; font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif;
+    color: #fff; white-space: nowrap; transition: all 0.15s; flex-shrink: 0;
+  }
+  .mattia-mode .btn-modifica { background: var(--mattia); }
+  .eli-mode .btn-modifica { background: var(--eli); }
+  .btn-modifica:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .max-notice { font-size: 12px; color: var(--text3); text-align: center; padding: 10px; }
+  .tip { font-size: 12px; color: var(--text3); padding: 10px 14px; background: var(--surface2); border-radius: var(--radius-sm); border-left: 3px solid var(--border2); margin-top: 6px; line-height: 1.5; }
+
+  @media (max-width: 480px) {
+    .page { padding: 20px 14px 60px; }
+    .modifica-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="page mattia-mode" id="page">
+
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 11.5C4 7.36 7.36 4 11.5 4s7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5S4 15.64 4 11.5z" fill="white" fill-opacity="0.15"/>
+        <path d="M15.5 7.5L10 10.5L7.5 15.5L13 12.5L15.5 7.5z" fill="white"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <h1>FitBrain Training</h1>
+      <p>Gestione clienti WhatsApp — uso interno</p>
+    </div>
+  </div>
+  <div class="subtitle">Genera messaggi per le tue clienti nel tuo tono. Fino a 4 versioni con modifiche.</div>
+
+  <div class="card">
+    <div class="card-title">Coach</div>
+    <div class="coach-toggle">
+      <button class="coach-btn mattia active" onclick="setCoach('mattia')">💪 Mattia</button>
+      <button class="coach-btn eli" onclick="setCoach('eli')">🌸 Elisabetta</button>
+    </div>
+
+    <div class="field">
+      <label>Tipo di messaggio</label>
+      <select id="tipo">
+        <option value="check_settimanale">Check settimanale allenamenti</option>
+        <option value="risposta_feedback">Risposta a feedback cliente</option>
+        <option value="revisione_video">Revisione video esercizio</option>
+        <option value="risposta_domanda">Risposta a domanda tecnica</option>
+        <option value="motivazione">Messaggio motivazionale</option>
+        <option value="risposta_scusa">Risposta a scuse / allenamenti saltati</option>
+        <option value="benvenuto">Messaggio di benvenuto cliente</option>
+        <option value="followup">Follow up (non risponde)</option>
+        <option value="libero">Messaggio libero</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Chat recente (ultimi messaggi — opzionale ma consigliato)</label>
+      <textarea id="chat" style="min-height: 100px;" placeholder="Incolla gli ultimi 2-4 messaggi della chat...&#10;&#10;Es:&#10;Sofia: ciao Mattia fatto il terzo allenamento! ho sentito tanto le gambe&#10;Sofia: ho provato ad aumentare il carico sullo stacco ma non ce la facevo"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Istruzioni specifiche (opzionale)</label>
+      <textarea id="istruzioni" style="min-height: 60px;" placeholder="Es: dille che è stata brava ma deve provare a sollevare di più / digli che va bene saltare questa settimana / incoraggiala perché sembra scoraggiata / chiedi se ha fatto il video dello stacco..."></textarea>
+    </div>
+  </div>
+
+  <button class="btn-generate" id="gen-btn" onclick="genera()">
+    Genera messaggio
+  </button>
+
+  <div id="versions-wrap" class="versions-wrap"></div>
+
+  <div class="tip" style="margin-top: 16px;">
+    💡 Dopo la generazione puoi chiedere varianti — scrivi le modifiche nel campo sotto ogni messaggio e ottieni una versione alternativa. Fino a 4 versioni in totale.
+  </div>
+
+</div>
+
+<script>
+let coach = 'mattia';
+let versions = [];
+const MAX_VERSIONS = 4;
+
+function setCoach(c) {
+  coach = c;
+  const page = document.getElementById('page');
+  page.className = c === 'mattia' ? 'page mattia-mode' : 'page eli-mode';
+  document.querySelectorAll('.coach-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.coach-btn.' + c).classList.add('active');
+}
+
+const mattiaStyle = `
+TONO E STILE DI MATTIA:
+- Diretto, energico, motivante ma non esagerato
+- Usa emoji con misura: 💪🏻 🔥 ☺️ ✅ 😊 👋🏻 🚀
+- Parole tipiche: "ottimo", "bravissima", "perfetto", "forza", "ci aggiorniamo", "bravissima"
+- Quando dà feedback tecnico è preciso e concreto, non gira intorno
+- Non asseconda sempre — se qualcosa va migliorato lo dice chiaramente ma con rispetto
+- Chiude i messaggi con energia: "a presto 🚀", "forza 💪🏻", "ci aggiorniamo presto"
+- Check settimanale: "Come sono andati gli allenamenti? Tutto bene, qualche feedback?"
+- Tono: amichevole professionale, come un coach che vuole risultati veri
+- ESEMPI REALI suoi messaggi:
+  "Ottimo Sofia, è normale sentire più fatica quando aumenti i carichi, ma se riesci a gestirla vuol dire che stai lavorando alla grande! Continua così, vedrai che il corpo si adatterà e diventerà sempre più forte. Forza, ci aggiorniamo al prossimo feedback 💪🏻🔥"
+  "Ciao Barbara! Il video degli stacchi è ottimo, davvero ben fatto 💪🏻 ti consiglio solo, quando puoi, di usare scarpe a suola piatta o allenarti anche scalza per avere una base più stabile."
+  "Buongiorno ✨ Qui Mattia che scrive! Tutto bene con gli allenamenti? Se è da un po che non ci sentiamo aggiorniami pure, grazie mille 🙏🏻"`;
+
+const elisabettaStyle = `
+TONO E STILE DI ELISABETTA:
+- Caldo, materno, empatico, rassicurante
+- Usa emoji con generosità: 🥰 ❤️ 🌸 ✨ 💪🏻 🩷 ☀️
+- Parole tipiche: "bravissima", "ottimo", "sono contenta", "tranquilla", "fammi sapere", "tienimi aggiornata"
+- Molto più morbida di Mattia — conforta, capisce le difficoltà, non giudica mai
+- Quando dà feedback tecnico lo fa con dolcezza, sempre con un "bravissima" prima
+- Lascia sempre la scelta alla cliente, non impone mai
+- Chiude con: "fammi sapere 🥰", "a presto ❤️", "tienimi aggiornata 💪🏻", "❤️"
+- Check settimanale: "Come procedono gli allenamenti? Tienimi aggiornata 💪🏻"
+- Tono: come un'amica più grande che ti vuole bene e ti supporta
+- ESEMPI REALI suoi messaggi:
+  "Ciao Stella🥰 Eccoti la video revisione dell'hip thrust e ti rispondo a tutto"
+  "Buongiorno Roberta🥰 Bravissima per aver iniziato!💪🏻 Il timer di 5-7 minuti indica il tempo massimo da dedicare all'insieme degli esercizi previsti in quel blocco, non alla singola esecuzione!"
+  "Caspita mi dispiace! Va bene Valeria, l'importante è che ti rimetti poi tienimi aggiornata se riesci ad allenarti o meno 🥰"
+  "Buongiorno🌸 Qui Elisabetta 🥰 Come procedono gli allenamenti? Se non ci sentiamo da un po' aggiornami pure 💪🏻"`;
+
+function buildPrompt(istruzioniExtra = null, prevVersione = null) {
+  const tipo = document.getElementById('tipo').value;
+  const chat = document.getElementById('chat').value.trim();
+  const istruzioni = document.getElementById('istruzioni').value.trim();
+
+  const tipoLabel = {
+    check_settimanale: 'check settimanale sugli allenamenti — chiedi com\'è andata la settimana',
+    risposta_feedback: 'risposta al feedback della cliente su come è andato l\'allenamento',
+    revisione_video: 'messaggio che accompagna la revisione di un video esercizio inviato su Loom',
+    risposta_domanda: 'risposta a una domanda tecnica sull\'allenamento',
+    motivazione: 'messaggio motivazionale per tenere alta la costanza e la motivazione',
+    risposta_scusa: 'risposta a scuse o allenamenti saltati — incoraggiare senza colpevolizzare ma senza assecondare troppo',
+    benvenuto: 'benvenuto alla nuova cliente che ha appena iniziato il percorso',
+    followup: 'follow up perché la cliente non risponde da qualche giorno',
+    libero: 'messaggio libero basato sul contesto della chat'
+  }[tipo];
+
+  const stylePrompt = coach === 'mattia' ? mattiaStyle : elisabettaStyle;
+  const nomeCoach = coach === 'mattia' ? 'Mattia' : 'Elisabetta';
+
+  let prompt = `Sei ${nomeCoach} di FitBrain Training, un personal trainer online specializzato in allenamento femminile.
+
+${stylePrompt}
+
+REGOLE FONDAMENTALI:
+- Scrivi UN SOLO messaggio breve (3-6 righe massimo)
+- Non essere mai eccessivamente entusiasta o artificiale
+- Se la cliente ha fatto bene: riconoscilo con autenticità
+- Se qualcosa va migliorato: dillo chiaramente ma con rispetto — non assecondare sempre
+- Non dare mai consigli non richiesti di alimentazione
+- Tono motivazionale ma reale, non da chatbot
+- Usa il nome della cliente se presente nella chat, altrimenti omettilo
+- Scrivi SOLO il messaggio, senza spiegazioni o virgolette
+
+TIPO DI MESSAGGIO: ${tipoLabel}
+`;
+
+  if (chat) prompt += `\nCHAT RECENTE:\n${chat}\n`;
+  if (istruzioni) prompt += `\nISTRUZIONI SPECIFICHE (seguile con priorità):\n${istruzioni}\n`;
+  if (istruzioniExtra) prompt += `\nMODIFICA RICHIESTA:\n${istruzioniExtra}\nMessaggio precedente da modificare:\n${prevVersione}\n\nCrea una NUOVA versione del messaggio applicando la modifica. Mantieni il tono originale di ${nomeCoach}.`;
+
+  return prompt;
+}
+
+async function callAPI(prompt) {
+  const res = await fetch('https://fitbrain-api.fitbraintraining.workers.dev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 600,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const data = await res.json();
+  return data.content?.map(b => b.text || '').join('') || 'Errore. Riprova.';
+}
+
+async function genera() {
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Generando...';
+  versions = [];
+  document.getElementById('versions-wrap').innerHTML = '';
+
+  try {
+    const vIdx = 0;
+    addVersionCard(vIdx, true);
+    const testo = await callAPI(buildPrompt());
+    versions[vIdx] = testo;
+    updateVersionCard(vIdx, testo, false);
+  } catch(e) {
+    document.getElementById('versions-wrap').innerHTML = '<div class="tip">Errore di connessione. Riprova.</div>';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Genera messaggio';
+}
+
+async function aggiungiVariante(parentIdx) {
+  if (versions.length >= MAX_VERSIONS) return;
+
+  const input = document.getElementById('mod-input-' + parentIdx);
+  const modifica = input ? input.value.trim() : '';
+  const btn = document.getElementById('mod-btn-' + parentIdx);
+
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+
+  const newIdx = versions.length;
+  versions.push(null);
+  addVersionCard(newIdx, true);
+
+  try {
+    const testo = await callAPI(buildPrompt(modifica || null, versions[parentIdx]));
+    versions[newIdx] = testo;
+    updateVersionCard(newIdx, testo, false);
+    if (input) input.value = '';
+  } catch(e) {
+    updateVersionCard(newIdx, 'Errore. Riprova.', false);
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = 'Variante'; }
+}
+
+function addVersionCard(idx, loading) {
+  const wrap = document.getElementById('versions-wrap');
+  const isFirst = idx === 0;
+  const badgeClass = coach === 'mattia' ? 'badge-v1' : 'badge-eli';
+  const label = isFirst ? 'Versione 1' : `Variante ${idx + 1}`;
+
+  const div = document.createElement('div');
+  div.className = 'version-card';
+  div.id = 'vcard-' + idx;
+  div.innerHTML = `
+    <div class="version-header">
+      <span class="version-label">${label}</span>
+      <span class="version-badge ${loading ? 'badge-edit' : badgeClass}" id="vbadge-${idx}">${loading ? 'Elaborazione...' : 'Pronto'}</span>
+    </div>
+    <div class="version-body loading" id="vbody-${idx}">Sto scrivendo...</div>
+    <div id="vactions-${idx}" style="display:none;">
+      <div class="version-actions">
+        <button class="btn-copy" onclick="copia(${idx})">Copia messaggio</button>
+      </div>
+      ${versions.length < MAX_VERSIONS ? `
+      <div style="padding: 0 16px 14px;">
+        <div class="modifica-row">
+          <textarea id="mod-input-${idx}" placeholder="Es: dille che deve spingere di più / aggiungi un complimento sull'impegno / sii più breve..."></textarea>
+          <button class="btn-modifica" id="mod-btn-${idx}" onclick="aggiungiVariante(${idx})">Variante</button>
+        </div>
+      </div>` : '<div class="max-notice">Hai raggiunto il massimo di 4 versioni</div>'}
+    </div>
+  `;
+  wrap.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function updateVersionCard(idx, testo, loading) {
+  const badge = document.getElementById('vbadge-' + idx);
+  const body = document.getElementById('vbody-' + idx);
+  const actions = document.getElementById('vactions-' + idx);
+  const badgeClass = coach === 'mattia' ? 'badge-v1' : 'badge-eli';
+
+  if (body) { body.textContent = testo; body.className = 'version-body'; }
+  if (badge) { badge.textContent = loading ? 'Elaborazione...' : 'Pronto'; badge.className = 'version-badge ' + (loading ? 'badge-edit' : badgeClass); }
+  if (actions && !loading) actions.style.display = 'block';
+
+  // Se siamo al max aggiorna tutti i campi modifica
+  if (versions.length >= MAX_VERSIONS) {
+    document.querySelectorAll('.modifica-row').forEach(r => {
+      r.innerHTML = '<div class="max-notice">Hai raggiunto il massimo di 4 versioni</div>';
+    });
+  }
+}
+
+function copia(idx) {
+  if (!versions[idx]) return;
+  navigator.clipboard.writeText(versions[idx]).then(() => {
+    const btns = document.querySelectorAll('.btn-copy');
+    const btn = document.querySelectorAll('.version-card')[idx]?.querySelector('.btn-copy');
+    if (btn) {
+      btn.textContent = '✓ Copiato!';
+      setTimeout(() => btn.textContent = 'Copia messaggio', 2000);
+    }
+  });
+}
+</script>
+</body>
+</html>
